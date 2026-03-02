@@ -9,7 +9,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Home() {
   const [input, setInput] = useState("");
-  const { messages, sendMessage, status, error } = useChat();
+  const [topic, setTopic] = useState("");
+  const [searchKey, setSearchKey] = useState(0);
+  const { messages, setMessages, sendMessage, status, error } = useChat();
 
   const isLoading = status === "streaming" || status === "submitted";
 
@@ -17,7 +19,10 @@ export default function Home() {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
     const text = input;
+    setTopic(text);
     setInput("");
+    setMessages([]);
+    setSearchKey((k) => k + 1);
     await sendMessage({ text });
   };
 
@@ -86,6 +91,12 @@ export default function Home() {
       </div>
 
       <div className="mt-8 flex w-full flex-col items-center gap-4 pb-16">
+        {topic && !isIdle && (
+          <h2 className="w-full max-w-2xl text-lg font-medium text-muted-foreground">
+            Researching: <span className="text-foreground">{topic}</span>
+          </h2>
+        )}
+
         {error && (
           <div className="w-full max-w-2xl rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
             <p className="font-medium">Something went wrong</p>
@@ -100,9 +111,15 @@ export default function Home() {
           </div>
         )}
 
-        {toolSteps.length > 0 && <StepDisplay steps={toolSteps} />}
+        {toolSteps.length > 0 && (
+          <StepDisplay key={searchKey} steps={toolSteps} hasReport={hasReport} />
+        )}
 
-        {hasReport && <ResearchReport content={reportContent} />}
+        {hasReport && (
+          <div id="report" className="w-full max-w-2xl">
+            <ResearchReport content={reportContent} />
+          </div>
+        )}
 
         {isLoading && hasReport && (
           <div className="w-full max-w-2xl">

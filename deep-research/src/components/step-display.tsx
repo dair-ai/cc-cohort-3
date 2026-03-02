@@ -1,8 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, ExternalLink, Loader2 } from "lucide-react";
+import { Search, ExternalLink, Loader2, ChevronDown, ChevronRight } from "lucide-react";
 
 interface SearchResult {
   title: string;
@@ -18,13 +19,55 @@ interface ToolStep {
 
 interface StepDisplayProps {
   steps: ToolStep[];
+  hasReport?: boolean;
 }
 
-export function StepDisplay({ steps }: StepDisplayProps) {
+export function StepDisplay({ steps, hasReport = false }: StepDisplayProps) {
+  const [manualToggle, setManualToggle] = useState<boolean | null>(null);
+
+  // Auto-collapse when report appears, but respect manual toggle
+  const collapsed = manualToggle !== null ? manualToggle : hasReport;
+
   if (!steps || steps.length === 0) return null;
+
+  const completedSteps = steps.filter(
+    (s) => s.results && s.results.length > 0
+  );
+  const totalSources = completedSteps.reduce(
+    (sum, s) => sum + (s.results?.length ?? 0),
+    0
+  );
+
+  if (collapsed) {
+    return (
+      <div className="w-full max-w-2xl">
+        <button
+          onClick={() => setManualToggle(false)}
+          className="flex w-full items-center gap-2 rounded-lg border bg-card px-4 py-3 text-sm transition-colors hover:bg-accent"
+        >
+          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+          <Search className="h-4 w-4 text-primary" />
+          <span className="text-muted-foreground">
+            {completedSteps.length} search{completedSteps.length !== 1 ? "es" : ""} completed
+          </span>
+          <span className="text-muted-foreground">—</span>
+          <Badge variant="secondary">{totalSources} sources found</Badge>
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="flex w-full max-w-2xl flex-col gap-3">
+      {hasReport && (
+        <button
+          onClick={() => setManualToggle(true)}
+          className="flex items-center gap-1 self-start text-xs text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <ChevronDown className="h-3 w-3" />
+          Collapse search steps
+        </button>
+      )}
       {steps.map((step, index) => {
         const isLoading =
           step.state === "call" ||
